@@ -27,7 +27,24 @@ export const getUserStats = (): UserStats => {
       localStorage.setItem(STATS_KEY, JSON.stringify(INITIAL_STATS));
       return INITIAL_STATS;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') {
+      return INITIAL_STATS;
+    }
+    return {
+      totalScans: typeof parsed.totalScans === 'number' ? parsed.totalScans : 0,
+      confirmedDisposals: typeof parsed.confirmedDisposals === 'number' ? parsed.confirmedDisposals : 0,
+      ecoPoints: typeof parsed.ecoPoints === 'number' ? parsed.ecoPoints : 0,
+      currentStreakDays: typeof parsed.currentStreakDays === 'number' ? parsed.currentStreakDays : 0,
+      lastActiveDate: typeof parsed.lastActiveDate === 'string' ? parsed.lastActiveDate : new Date().toISOString().split('T')[0],
+      categoryCounts: {
+        recyclable: parsed.categoryCounts?.recyclable || 0,
+        wet: parsed.categoryCounts?.wet || 0,
+        dry: parsed.categoryCounts?.dry || 0,
+        ewaste: parsed.categoryCounts?.ewaste || 0
+      },
+      totalImpactCo2eGrams: typeof parsed.totalImpactCo2eGrams === 'number' ? parsed.totalImpactCo2eGrams : 0
+    };
   } catch {
     return INITIAL_STATS;
   }
@@ -48,7 +65,21 @@ export const getScanHistory = (): HistoryRecord[] => {
       localStorage.setItem(HISTORY_KEY, JSON.stringify(INITIAL_HISTORY));
       return INITIAL_HISTORY;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return INITIAL_HISTORY;
+    }
+    return parsed.filter(
+      (rec: any) =>
+        rec &&
+        typeof rec === 'object' &&
+        typeof rec.id === 'string' &&
+        rec.result &&
+        typeof rec.result === 'object' &&
+        rec.result.item &&
+        typeof rec.result.item === 'object' &&
+        typeof rec.result.item.name === 'string'
+    );
   } catch {
     return INITIAL_HISTORY;
   }
