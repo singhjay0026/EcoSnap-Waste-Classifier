@@ -1,7 +1,9 @@
 import React from 'react';
-import { Award, Flame, Leaf, CheckCircle2, RotateCcw, Sparkles, TrendingUp, Camera } from 'lucide-react';
+import { Award, Flame, Leaf, CheckCircle2, RotateCcw, Sparkles, TrendingUp, Camera, Zap } from 'lucide-react';
 import type { UserStats, HistoryRecord } from '../types';
 import { IMPACT_METHODOLOGY_NOTE } from '../data/wasteDatabase';
+import { getEcoLevelInfo } from '../utils/ecoLevels';
+import { useCountUp, useFloatCountUp } from '../hooks/useCountUp';
 
 interface DashboardViewProps {
   userStats: UserStats;
@@ -16,7 +18,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onStartNewScan,
   onResetStats
 }) => {
-  const totalCo2Kg = (userStats.totalImpactCo2eGrams / 1000).toFixed(2);
 
   // Derive counts directly from scanHistory if populated, falling back to userStats.categoryCounts
   const countsFromHistory = scanHistory.reduce(
@@ -110,12 +111,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return `Building sustainable habits: Scan your canteen waste after every meal to build your streak and earn Eco Points.`;
   };
 
+  const animatedPoints = useCountUp(userStats.ecoPoints);
+  const animatedStreak = useCountUp(userStats.currentStreakDays);
+  const animatedDisposals = useCountUp(userStats.confirmedDisposals);
+  const animatedCo2Kg = useFloatCountUp(userStats.totalImpactCo2eGrams / 1000, 2);
+  const ecoLevel = getEcoLevelInfo(userStats.ecoPoints);
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-8">
       {/* Top Header */}
       <div className="rounded-3xl paper-card border border-stone-300 p-5 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm bg-white">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-bold mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-bold mb-2">
             <Award className="w-3.5 h-3.5 text-emerald-700" />
             <span>YOUR CAMPUS IMPACT</span>
           </div>
@@ -136,9 +143,50 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </button>
       </div>
 
+      {/* Eco Level Achievement & Level Progression Card */}
+      <div className="p-5 sm:p-6 rounded-3xl paper-card border border-stone-300 bg-white space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-2xl shadow-2xs">
+              {ecoLevel.badge}
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase text-emerald-800 tracking-widest flex items-center gap-1">
+                <Zap className="w-3 h-3 text-emerald-700" />
+                <span>SUSTAINABILITY TIER</span>
+              </div>
+              <h3 className="text-xl font-black text-stone-900">{ecoLevel.name}</h3>
+            </div>
+          </div>
+
+          <div className="px-3.5 py-1.5 rounded-xl bg-stone-100 border border-stone-300 text-stone-800 text-xs font-extrabold shrink-0">
+            {userStats.ecoPoints} Accumulated Eco Points
+          </div>
+        </div>
+
+        {/* Level Progression Progress Bar */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs font-bold text-stone-600">
+            <span>Progress to Next Tier</span>
+            <span>
+              {ecoLevel.nextLevelName
+                ? `${ecoLevel.pointsNeeded} pts to ${ecoLevel.nextLevelName}`
+                : 'Maximum Tier Reached!'}
+            </span>
+          </div>
+
+          <div className="h-3 w-full rounded-full bg-stone-100 border border-stone-200 overflow-hidden">
+            <div
+              style={{ width: `${ecoLevel.progressPct}%` }}
+              className="h-full bg-emerald-600 transition-all duration-700 ease-out"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Personalized AI Insight Callout Card */}
       <div className="p-5 rounded-3xl bg-emerald-50 border border-emerald-300 space-y-2">
-        <div className="flex items-center gap-2 text-xs font-black text-emerald-900 uppercase tracking-wider">
+        <div className="flex items-center gap-2 text-xs font-black text-emerald-950 uppercase tracking-wider">
           <Sparkles className="w-4 h-4 text-emerald-700" />
           <span>SUSTAINABILITY INSIGHT</span>
         </div>
@@ -154,7 +202,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span>Eco Points</span>
             <Award className="w-4 h-4 text-emerald-700" />
           </div>
-          <div className="text-3xl font-black text-stone-900">{userStats.ecoPoints}</div>
+          <div className="text-3xl font-black text-stone-900">{animatedPoints}</div>
           <div className="text-[11px] text-stone-500 font-medium">+10 to +25 pts per item</div>
         </div>
 
@@ -163,7 +211,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span>Active Streak</span>
             <Flame className="w-4 h-4 text-amber-600" />
           </div>
-          <div className="text-3xl font-black text-stone-900">{userStats.currentStreakDays} Days</div>
+          <div className="text-3xl font-black text-stone-900">{animatedStreak} Days</div>
           <div className="text-[11px] text-stone-500 font-medium">Daily campus segregation</div>
         </div>
 
@@ -172,7 +220,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span>Disposals</span>
             <CheckCircle2 className="w-4 h-4 text-teal-700" />
           </div>
-          <div className="text-3xl font-black text-stone-900">{userStats.confirmedDisposals}</div>
+          <div className="text-3xl font-black text-stone-900">{animatedDisposals}</div>
           <div className="text-[11px] text-stone-500 font-medium">Items correctly binned</div>
         </div>
 
@@ -181,7 +229,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span>CO₂e Avoided</span>
             <Leaf className="w-4 h-4 text-emerald-700" />
           </div>
-          <div className="text-3xl font-black text-stone-900">{totalCo2Kg} kg</div>
+          <div className="text-3xl font-black text-stone-900">{animatedCo2Kg} kg</div>
           <div className="text-[11px] text-stone-500 font-medium">Estimated carbon offset*</div>
         </div>
       </div>

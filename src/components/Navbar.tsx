@@ -1,6 +1,7 @@
 import React from 'react';
 import { Camera, LayoutDashboard, MapPin, History, Flame, Award, Leaf } from 'lucide-react';
 import type { UserStats } from '../types';
+import { getEcoLevelInfo } from '../utils/ecoLevels';
 
 interface NavbarProps {
   activeTab: 'scan' | 'dashboard' | 'campus' | 'history';
@@ -43,10 +44,25 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* User Gamification Pills & Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Eco Level Badge */}
+            {(() => {
+              const level = getEcoLevelInfo(userStats.ecoPoints);
+              return (
+                <div
+                  onClick={() => setActiveTab('dashboard')}
+                  title={`Level: ${level.name} (${userStats.ecoPoints} points)`}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100/80 border border-emerald-300 text-emerald-950 text-xs font-black cursor-pointer hover:bg-emerald-200 transition-colors shadow-2xs"
+                >
+                  <span>{level.badge}</span>
+                  <span>{level.name}</span>
+                </div>
+              );
+            })()}
+
             {/* Streak Badge */}
             <div
               title={`${userStats.currentStreakDays}-day active recycling streak!`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold shadow-2xs"
             >
               <Flame className="w-4 h-4 text-amber-600 fill-amber-500" />
               <span>{userStats.currentStreakDays}d Streak</span>
@@ -56,10 +72,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div
               onClick={() => setActiveTab('dashboard')}
               title="Click to view Eco Dashboard"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs font-bold cursor-pointer hover:bg-emerald-100 transition-colors shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs font-bold cursor-pointer hover:bg-emerald-100 transition-colors shadow-2xs"
             >
               <Award className="w-4 h-4 text-emerald-700" />
-              <span>{userStats.ecoPoints} Eco Points</span>
+              <span>{userStats.ecoPoints} Pts</span>
             </div>
 
             {/* Quick Primary Scan CTA Button */}

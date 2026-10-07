@@ -22,6 +22,7 @@ import type { ClassificationResult, WasteItem } from '../types';
 import { getBestCampusLocationForCategory, getLocationMatchReason } from '../data/campusLocations';
 import { IMPACT_METHODOLOGY_NOTE } from '../data/wasteDatabase';
 import { LowConfidenceView } from './LowConfidenceView';
+import { useCountUp } from '../hooks/useCountUp';
 
 interface ResultCardProps {
   result: ClassificationResult;
@@ -93,6 +94,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
   const categoryStr = (item.category || 'dry').toLowerCase();
   const campusLocation = getBestCampusLocationForCategory(categoryStr, item.material);
   const isEwaste = categoryStr === 'ewaste';
+  const animatedCo2Grams = useCountUp(item.estimatedImpactCo2eGrams || 100, 800);
 
   const toggleStep = (idx: number) => {
     setCompletedSteps((prev) => ({
@@ -127,7 +129,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
   const readinessLabel = item.disposalReadinessLabel || (readinessScore >= 80 ? 'READY TO RECYCLE ✓' : 'NEEDS PREPARATION ⚠');
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 animate-pop-in">
       <div className="rounded-3xl paper-card border border-stone-300 p-5 sm:p-8 space-y-6 shadow-xl relative overflow-hidden bg-white">
         {/* 1. Header Metadata & Model Source Tag */}
         <div className="flex items-center justify-between gap-2 pb-4 border-b border-stone-200">
@@ -230,11 +232,9 @@ export const ResultCard: React.FC<ResultCardProps> = ({
             <div className="text-xs font-bold text-stone-700">
               Category: <span className="uppercase text-stone-900 font-extrabold">{categoryStr}</span>
             </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-1 shrink-0">
+          </div>          <div className="flex flex-col items-center gap-1 shrink-0">
             <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-md border-2 border-white"
+              className="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-md border-2 border-white animate-icon-bounce"
               style={{ backgroundColor: item.binHex || '#2563eb' }}
             >
               {isEwaste ? '⚡' : categoryStr === 'wet' ? '🌱' : categoryStr === 'recyclable' ? '♻️' : '🗑️'}
@@ -413,7 +413,6 @@ export const ResultCard: React.FC<ResultCardProps> = ({
           </div>
         )}
 
-
         {/* 9. YOUR IMPACT (ECO REWARD + CO2 ESTIMATE) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 flex items-center gap-3">
@@ -432,7 +431,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
             </div>
             <div>
               <div className="text-[10px] font-black text-stone-700 uppercase tracking-wider">YOUR IMPACT</div>
-              <div className="text-sm font-black text-stone-900">~{item.estimatedImpactCo2eGrams || 100}g CO₂e saved*</div>
+              <div className="text-sm font-black text-stone-900">~{animatedCo2Grams}g CO₂e saved*</div>
             </div>
           </div>
         </div>
