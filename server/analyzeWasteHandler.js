@@ -17,12 +17,10 @@ export const AiWasteResponseSchema = z.object({
   needsSpecialHandling: z.boolean()
 });
 
-export type AiWasteResponse = z.infer<typeof AiWasteResponseSchema>;
-
 /**
  * Common Waste Handler for Gemini Vision API
  */
-export async function processWasteImage(imageBase64: string): Promise<AiWasteResponse> {
+export async function processWasteImage(imageBase64) {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey || apiKey.trim() === '' || apiKey === 'your_gemini_api_key_here') {
@@ -52,7 +50,7 @@ Return ONLY valid JSON matching this schema:
   "needsSpecialHandling": boolean
 }`;
 
-    const modelsToTry = ['gemini-3.1-flash-lite', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-flash-latest'];
+    const modelsToTry = ['gemini-3.6-flash'];
     let response;
     let lastError;
 
@@ -135,7 +133,7 @@ Return ONLY valid JSON matching this schema:
 /**
  * Intelligent Fallback Response when API key is missing or offline
  */
-function generateSmartFallbackResponse(imageBase64: string): AiWasteResponse {
+function generateSmartFallbackResponse(imageBase64) {
   // If base64 contains indicators or as default
   return {
     identifiedItem: 'Food Wrapper / Packaging',
