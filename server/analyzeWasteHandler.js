@@ -50,7 +50,7 @@ Return ONLY valid JSON matching this schema:
   "needsSpecialHandling": boolean
 }`;
 
-    const modelsToTry = ['gemini-3.6-flash'];
+    const modelsToTry = ['gemini-3.6-flash', 'gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-3.1-flash-lite'];
     let response;
     let lastError;
 
