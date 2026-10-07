@@ -12,27 +12,95 @@ interface DashboardViewProps {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   userStats,
-  scanHistory: _scanHistory,
+  scanHistory,
   onStartNewScan,
   onResetStats
 }) => {
   const totalCo2Kg = (userStats.totalImpactCo2eGrams / 1000).toFixed(2);
 
-  const categories = [
-    { key: 'recyclable', label: 'Recyclable Plastic & Paper', color: 'bg-blue-600', text: 'text-blue-800' },
-    { key: 'wet', label: 'Wet / Organic Composting', color: 'bg-emerald-600', text: 'text-emerald-800' },
-    { key: 'dry', label: 'Dry Packaging', color: 'bg-amber-600', text: 'text-amber-800' },
-    { key: 'ewaste', label: 'Toxic E-Waste Drop Box', color: 'bg-purple-600', text: 'text-purple-800' }
-  ] as const;
+  // Derive counts directly from scanHistory if populated, falling back to userStats.categoryCounts
+  const countsFromHistory = scanHistory.reduce(
+    (acc, record) => {
+      const cat = record.result?.item?.category;
+      if (cat && acc[cat] !== undefined) {
+        acc[cat] += 1;
+      }
+      return acc;
+    },
+    { recyclable: 0, wet: 0, dry: 0, ewaste: 0 } as Record<string, number>
+  );
 
-  const totalCategoryScans = Object.values(userStats.categoryCounts).reduce((a, b) => a + b, 0) || 1;
+  const hasHistory = scanHistory.length > 0;
+  const effectiveCounts = hasHistory ? countsFromHistory : userStats.categoryCounts;
+  const totalScansCount = hasHistory
+    ? scanHistory.length
+    : Object.values(userStats.categoryCounts).reduce((a, b) => a + b, 0);
+
+  const streamConfig = [
+    {
+      key: 'recyclable',
+      label: 'Recyclable Stream',
+      emoji: '♻️',
+      description: 'Paper, cardboard, PET bottles & clean plastics',
+      targetBin: 'Blue Recycling Bin',
+      location: 'Academic Block A & Canteen',
+      barColor: 'bg-blue-600',
+      bgColor: 'bg-blue-50/60',
+      borderColor: 'border-blue-200',
+      badgeBg: 'bg-blue-100',
+      badgeText: 'text-blue-900',
+      badgeBorder: 'border-blue-300'
+    },
+    {
+      key: 'wet',
+      label: 'Wet / Organic Stream',
+      emoji: '🌱',
+      description: 'Food scraps, fruit peels & organic waste',
+      targetBin: 'Green Organic Bin',
+      location: 'Hostel Zone Composter',
+      barColor: 'bg-emerald-600',
+      bgColor: 'bg-emerald-50/60',
+      borderColor: 'border-emerald-200',
+      badgeBg: 'bg-emerald-100',
+      badgeText: 'text-emerald-950',
+      badgeBorder: 'border-emerald-300'
+    },
+    {
+      key: 'dry',
+      label: 'Dry Waste Stream',
+      emoji: '🗑️',
+      description: 'Multi-layer food wrappers & dry packaging',
+      targetBin: 'Dry Waste Collection Point',
+      location: 'Main Canteen Waste Hub',
+      barColor: 'bg-amber-600',
+      bgColor: 'bg-amber-50/60',
+      borderColor: 'border-amber-200',
+      badgeBg: 'bg-amber-100',
+      badgeText: 'text-amber-950',
+      badgeBorder: 'border-amber-300'
+    },
+    {
+      key: 'ewaste',
+      label: 'Toxic E-Waste',
+      emoji: '⚡',
+      description: 'Batteries, cables, chargers & electronic accessories',
+      targetBin: 'Library E-Waste Drop Box',
+      location: 'Central Library Entrance',
+      barColor: 'bg-purple-600',
+      bgColor: 'bg-purple-50/60',
+      borderColor: 'border-purple-200',
+      badgeBg: 'bg-purple-100',
+      badgeText: 'text-purple-950',
+      badgeBorder: 'border-purple-300'
+    }
+  ] as const;
 
   const getPersonalizedInsight = () => {
     if (userStats.totalScans === 0) {
       return `Welcome to EcoSnap! Point your camera at any trash item to get instant AI disposal guidance and start earning Eco Points.`;
     }
-    const recyclableCount = userStats.categoryCounts['recyclable'] || 0;
-    const ewasteCount = userStats.categoryCounts['ewaste'] || 0;
+    const recyclableCount = effectiveCounts['recyclable'] || 0;
+    const ewasteCount = effectiveCounts['ewaste'] || 0;
     if (ewasteCount > 0) {
       return `Awesome work! You've safely diverted ${ewasteCount} toxic e-waste item(s) from municipal landfills to the Library Drop Point.`;
     }
@@ -151,59 +219,115 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Category Stream Breakdown Bar */}
-      <div className="p-6 rounded-3xl paper-card border border-stone-300 space-y-4 bg-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-black text-stone-900 uppercase tracking-wider">
-            <TrendingUp className="w-4 h-4 text-emerald-700" />
-            <span>Category Disposal Stream Breakdown</span>
+      {/* Category Stream Breakdown Section */}
+      <div className="p-6 sm:p-8 rounded-3xl paper-card border border-stone-300 space-y-6 bg-white shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-stone-200 pb-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-black text-stone-900 uppercase tracking-wider">
+              <TrendingUp className="w-4 h-4 text-emerald-700" />
+              <span>WASTE STREAM BREAKDOWN</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black text-stone-900 mt-1">
+              Campus Stream Distribution Analytics
+            </h3>
           </div>
-          <span className="text-xs text-stone-500 font-bold">{userStats.totalScans} Total Scans</span>
+          <div className="px-3 py-1.5 rounded-xl bg-stone-100 border border-stone-300 text-xs font-extrabold text-stone-800 shrink-0">
+            {totalScansCount} Total Confirmed Scans
+          </div>
         </div>
 
-        {userStats.totalScans === 0 ? (
-          <div className="p-6 rounded-2xl bg-stone-50 border border-dashed border-stone-300 text-center space-y-2">
-            <p className="text-xs font-bold text-stone-700">No Waste Categorized Yet</p>
-            <p className="text-[11px] text-stone-500">
-              Scanned waste items will automatically populate your stream breakdown chart.
+        {totalScansCount === 0 ? (
+          <div className="p-8 rounded-2xl bg-stone-50 border border-dashed border-stone-300 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center justify-center mx-auto">
+              <TrendingUp className="w-6 h-6" />
+            </div>
+            <h4 className="text-sm font-bold text-stone-900">No Stream Data Available Yet</h4>
+            <p className="text-xs text-stone-500 max-w-md mx-auto font-medium">
+              Start scanning campus waste items using EcoSnap AI to generate live stream breakdown analytics and carbon offset tracking.
             </p>
+            <button
+              onClick={onStartNewScan}
+              className="px-4 py-2.5 rounded-xl bg-[#1b4332] hover:bg-[#2d6a4f] text-white font-extrabold text-xs transition-colors cursor-pointer"
+            >
+              Scan Your First Item
+            </button>
           </div>
         ) : (
-          <>
-            {/* Stacked Percentage Bar */}
-            <div className="h-4 w-full rounded-full bg-stone-100 overflow-hidden flex shadow-inner">
-              {categories.map((cat) => {
-                const count = userStats.categoryCounts[cat.key] || 0;
-                const pct = Math.round((count / totalCategoryScans) * 100);
-                if (pct === 0) return null;
-                return (
-                  <div
-                    key={cat.key}
-                    style={{ width: `${pct}%` }}
-                    className={`${cat.color} h-full transition-all`}
-                    title={`${cat.label}: ${count} items (${pct}%)`}
-                  />
-                );
-              })}
+          <div className="space-y-6">
+            {/* Multi-Segment Stacked Proportion Bar */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-bold text-stone-600">
+                <span>Stream Proportion Bar</span>
+                <span>100% Total Segregation</span>
+              </div>
+              <div className="h-5 w-full rounded-2xl bg-stone-100 overflow-hidden flex shadow-inner border border-stone-200">
+                {streamConfig.map((stream) => {
+                  const count = effectiveCounts[stream.key] || 0;
+                  const pct = totalScansCount > 0 ? (count / totalScansCount) * 100 : 0;
+                  if (pct === 0) return null;
+                  return (
+                    <div
+                      key={stream.key}
+                      style={{ width: `${pct}%` }}
+                      className={`${stream.barColor} h-full transition-all flex items-center justify-center text-[10px] font-black text-white`}
+                      title={`${stream.label}: ${count} items (${pct.toFixed(1)}%)`}
+                    >
+                      {pct >= 10 ? `${pct.toFixed(0)}%` : ''}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Legend */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              {categories.map((cat) => {
-                const count = userStats.categoryCounts[cat.key] || 0;
-                const pct = Math.round((count / totalCategoryScans) * 100);
+            {/* Individual Stream Detail Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {streamConfig.map((stream) => {
+                const count = effectiveCounts[stream.key] || 0;
+                const pctNumber = totalScansCount > 0 ? (count / totalScansCount) * 100 : 0;
+                const pctStr = pctNumber.toFixed(1);
+
                 return (
-                  <div key={cat.key} className="p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-3 h-3 rounded-full ${cat.color}`} />
-                      <span className="text-xs font-bold text-stone-900">{cat.label}</span>
+                  <div
+                    key={stream.key}
+                    className={`p-4 sm:p-5 rounded-2xl border ${stream.bgColor} ${stream.borderColor} space-y-3 transition-all`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">{stream.emoji}</span>
+                        <div className="font-extrabold text-stone-900 text-sm">{stream.label}</div>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-black border ${stream.badgeBg} ${stream.badgeText} ${stream.badgeBorder}`}>
+                        {pctStr}%
+                      </span>
                     </div>
-                    <span className="text-xs font-extrabold text-stone-700">{count} ({pct}%)</span>
+
+                    <p className="text-xs text-stone-600 font-medium leading-snug">
+                      {stream.description}
+                    </p>
+
+                    {/* CSS Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-stone-700">
+                        <span>Items: {count}</span>
+                        <span>{pctStr}% of total</span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-stone-200 overflow-hidden">
+                        <div
+                          style={{ width: `${pctNumber}%` }}
+                          className={`h-full ${stream.barColor} transition-all`}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-stone-200/60 flex items-center justify-between text-[11px] font-bold text-stone-700">
+                      <span>Bin: <strong className="text-stone-900">{stream.targetBin}</strong></span>
+                      <span className="text-emerald-800">📍 {stream.location}</span>
+                    </div>
                   </div>
                 );
               })}
             </div>
-          </>
+          </div>
         )}
       </div>
 
