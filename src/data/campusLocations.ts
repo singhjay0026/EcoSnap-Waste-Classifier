@@ -82,8 +82,16 @@ export const getCampusLocationById = (id: string): CampusLocation => {
   return CAMPUS_LOCATIONS.find((loc) => loc.id === id) || CAMPUS_LOCATIONS[0];
 };
 
-export const getBestCampusLocationForCategory = (category: string, material?: string): CampusLocation => {
-  const cat = (category || 'dry').toLowerCase();
+export const getLocationMatchReason = (location: CampusLocation, category: string, material?: string): string => {
+  const mat = (material || '').toLowerCase();
+  if (mat && location.acceptedMaterials?.some((m) => mat.includes(m) || m.includes(mat))) {
+    return `Specialized campus location accepts identified material (${material}).`;
+  }
+  return `Designated campus collection point for ${category.toUpperCase()} waste stream.`;
+};
+
+export const getBestCampusLocationForCategory = (category: string, material?: string): CampusLocation | null => {
+  const cat = (category || '').toLowerCase();
   const mat = (material || '').toLowerCase();
 
   // Try matching by material keywords first
@@ -99,5 +107,6 @@ export const getBestCampusLocationForCategory = (category: string, material?: st
   if (matches.length > 0) {
     return matches.sort((a, b) => a.distanceMeters - b.distanceMeters)[0];
   }
-  return CAMPUS_LOCATIONS[0];
+  return null;
 };
+

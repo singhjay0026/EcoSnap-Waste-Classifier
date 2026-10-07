@@ -19,7 +19,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import type { ClassificationResult, WasteItem } from '../types';
-import { getBestCampusLocationForCategory } from '../data/campusLocations';
+import { getBestCampusLocationForCategory, getLocationMatchReason } from '../data/campusLocations';
 import { IMPACT_METHODOLOGY_NOTE } from '../data/wasteDatabase';
 import { LowConfidenceView } from './LowConfidenceView';
 
@@ -351,34 +351,68 @@ export const ResultCard: React.FC<ResultCardProps> = ({
           </div>
         )}
 
-        {/* 8. NEAREST CAMPUS COLLECTION POINT */}
-        <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-black text-stone-900 uppercase tracking-wider">
-              <MapPin className="w-4 h-4 text-emerald-700" />
-              <span>FIND A DROP-OFF POINT</span>
-            </div>
-            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-extrabold border border-emerald-300">
-              {campusLocation.distanceMeterText}
-            </span>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
-            <div>
-              <div className="text-sm font-extrabold text-stone-900">{campusLocation.name}</div>
-              <div className="text-xs text-stone-600 font-medium">{campusLocation.building}</div>
-              <div className="text-[11px] text-emerald-800 font-bold mt-0.5">📍 {campusLocation.mapLandmark}</div>
+        {/* 8. CAMPUS LOCATION DISPOSAL CARD */}
+        {campusLocation ? (
+          <div className="p-4 sm:p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-black text-stone-900 uppercase tracking-wider">
+                <MapPin className="w-4 h-4 text-emerald-700" />
+                <span>WHERE TO DISPOSE ON CAMPUS</span>
+              </div>
+              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-950 font-extrabold border border-emerald-300">
+                {campusLocation.distanceMeterText}
+              </span>
             </div>
 
-            <button
-              onClick={() => onExploreCampusLocation(campusLocation.id)}
-              className="px-4 py-2 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-900 text-xs font-extrabold border border-stone-300 flex items-center gap-1.5 transition-colors shrink-0 min-h-[44px] cursor-pointer"
-            >
-              <span>View Map</span>
-              <ArrowRight className="w-3.5 h-3.5 text-stone-800" />
-            </button>
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm sm:text-base font-black text-stone-900">{campusLocation.name}</span>
+                <span className="px-2 py-0.5 rounded bg-stone-200 text-stone-800 text-[10px] font-extrabold uppercase">
+                  {categoryStr} STREAM
+                </span>
+              </div>
+              <p className="text-xs text-stone-600 font-medium leading-relaxed">
+                {getLocationMatchReason(campusLocation, categoryStr, item.material)}
+              </p>
+              <div className="text-xs text-stone-700 font-bold flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
+                <span>🏢 {campusLocation.building}</span>
+                <span className="text-emerald-800">📍 {campusLocation.mapLandmark}</span>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-stone-200 flex items-center justify-between">
+              <span className="text-[11px] text-stone-500 font-semibold">
+                Status: <strong className="text-emerald-800 uppercase">{campusLocation.operatingStatus}</strong>
+              </span>
+              <button
+                onClick={() => onExploreCampusLocation(campusLocation.id)}
+                className="px-4 py-2 rounded-xl bg-[#1b4332] hover:bg-[#2d6a4f] text-white text-xs font-extrabold border border-emerald-900 flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer min-h-[40px]"
+              >
+                <span>View on Campus Map</span>
+                <ArrowRight className="w-3.5 h-3.5 text-white" />
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-black text-amber-900 uppercase tracking-wider">
+                <MapPin className="w-4 h-4 text-amber-700" />
+                <span>WHERE TO DISPOSE ON CAMPUS</span>
+              </div>
+              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold border border-amber-300">
+                LOCATION UNAVAILABLE
+              </span>
+            </div>
+            <p className="text-xs font-bold text-amber-900">
+              Campus location data is currently unavailable for this specific disposal category.
+            </p>
+            <p className="text-xs text-amber-800 font-medium">
+              Please use the recommended <strong className="font-extrabold">{item.binType || 'Campus Bin'}</strong> according to nearby campus bin labeling.
+            </p>
+          </div>
+        )}
+
 
         {/* 9. YOUR IMPACT (ECO REWARD + CO2 ESTIMATE) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
