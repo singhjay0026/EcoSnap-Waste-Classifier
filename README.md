@@ -1,121 +1,161 @@
-# EcoSnap 🌿 — AI-Powered Campus Waste Disposal Decision Assistant
+# EcoSnap 🌿 — AI Smart Campus Recycling & Waste Classifier
 
-[![EcoSnap Final A+++ Upgrade](https://img.shields.io/badge/EcoSnap-Hackathon%20A%2B%2B%2B%20Readiness%20Pass-059669?style=for-the-badge)](https://github.com/)
+[![EcoSnap Hackathon Status](https://img.shields.io/badge/EcoSnap-Hackathon%20Production%20Ready-059669?style=for-the-badge)](https://github.com/singhjay0026/EcoSnap-Waste-Classifier)
 [![Built With React & Vite](https://img.shields.io/badge/Built%20With-React%2019%20%7C%20Vite%208%20%7C%20TypeScript-0284c7?style=for-the-badge)](https://vitejs.dev/)
-[![TensorFlow.js AI](https://img.shields.io/badge/AI%20Engine-TensorFlow.js%20MobileNet%20v2-9333ea?style=for-the-badge)](https://www.tensorflow.org/js)
+[![Gemini Vision AI](https://img.shields.io/badge/AI%20Engine-Google%20Gemini%20Vision%20AI-8b5cf6?style=for-the-badge)](https://ai.google.dev/)
+[![Leaflet Map](https://img.shields.io/badge/Campus%20Map-Leaflet%20%7C%20OpenStreetMap-16a34a?style=for-the-badge)](https://leafletjs.com/)
 
-> **"Scan waste. Make the right disposal decision in seconds."**  
-> EcoSnap is a mobile-first, browser-native computer vision assistant designed for college campuses in India to guide students through the complete waste decision chain.
+> **"Point your camera at any waste item. Get instant AI classification, bin recommendation, and exact campus drop-off guidance in seconds."**
 
----
-
-## 🎯 1. Product Vision & Audit Overview
-
-### What EcoSnap Is (and Is Not)
-EcoSnap is **not** merely a generic object labeler. It is an **AI Disposal Decision Assistant**.  
-It answers the three critical questions every student faces after consuming an item:
-1. **What is this item & what is its disposal category?**
-2. **What exact preparation steps must I take before discarding it?** *(e.g. empty, rinse, separate lid, crush)*
-3. **Which exact campus bin or drop-off point should I take it to?**
-
-### Audit Findings & Architectural Honest Improvements
-- **Real Browser AI Inference**: Uses TensorFlow.js (`@tensorflow/tfjs` + `@tensorflow-models/mobilenet` v2) running directly in the browser on live WebCam video streams or uploaded image files.
-- **Image Input Handling**: Converts base64 uploads and canvas video frame captures into in-memory `HTMLImageElement` structures so MobileNet runs real predictions client-side.
-- **Judge Demo Console**: Clearly separates normal live AI scanning from curated Judge Demo Console scenario presets.
+EcoSnap is a mobile-first, AI-powered computer vision sustainability assistant engineered specifically for college campuses. It guides students from **camera capture** to **AI classification**, **stream mapping**, **bin recommendation**, **campus drop-off navigation**, **eco rewards**, and **carbon offset tracking**.
 
 ---
 
-## 🌟 2. Core Features & Unique Innovations
+## 📸 The EcoSnap Flow (CAPTURE → CLASSIFY → MAP → GUIDE → SCORE)
 
-### 🔍 A. Advanced Scanner with Frame Snapping & Live Reticle (`src/components/ScannerModal.tsx`)
-- Real canvas frame extraction from camera video streams.
-- Image preview step with **"Run AI Decision Engine"** or **"Retake Photo"** options.
-- Real-time status banners: `AI MODEL READY`, `AI ANALYZING`, `PREVIEW`, `LIVE SENSOR`.
-- Touch-friendly 44px+ controls and background body scroll prevention on mobile viewports.
-
-### 🌳 B. Unique Feature: Automated "Disposal Decision Trail" (`src/components/ResultCard.tsx`)
-Shows an expandable, transparent decision path explaining **WHY** a recommendation was made:
 ```
-FOUND (PET Plastic Bottle)
-  → HAZARD CHECK? Passed (Non-toxic)
-  → RECYCLABILITY EVALUATION? Passed (High Recovery Value)
-  → PREPARATION ACTION? Drain liquids & crush container
-  → FINAL ASSIGNED BIN: Blue Recycling Bin
+[ 1. CAMERA CAPTURE ] 
+        │
+        ▼
+[ 2. GEMINI VISION AI ] ──▶ Identifies item, material, confidence & rules
+        │
+        ▼
+[ 3. DISPOSAL STREAM ] ──▶ Maps to Recyclable, Wet/Organic, Dry, or E-Waste
+        │
+        ▼
+[ 4. RECOMMENDED BIN ] ──▶ Displays color-coded bin & preparation checklist
+        │
+        ▼
+[ 5. CAMPUS LOCATION ] ──▶ Pinpoints nearest campus collection hub & Leaflet map
+        │
+        ▼
+[ 6. ECO REWARDS & IMPACT ] ──▶ Awards +10 Eco Points, levels up tier, tracks CO₂e saved
 ```
-Accompanied by a concise explanation paragraph and pre-disposal reuse suggestions.
-
-### 🛡️ C. Safety & Confidence-Aware Rules
-- **High Confidence ($\ge 75\%$)**: Renders direct disposal recommendations, bin badges, preparation steps, and campus drop-off point.
-- **Medium Confidence ($45\% - 74\%$)**: Displays recommendations with a verification hint (*"Keep full item in frame under clear lighting"*).
-- **Low Confidence ($< 45\%$)**: Renders [`LowConfidenceView.tsx`](file:///c:/Users/Himani%20Thakur/Desktop/ECOSNAP-HACKATHON/src/components/LowConfidenceView.tsx) to prevent wrong disposal claims. Invites user to retake photo or select item manually.
-
-### ⚡ D. Prominent E-Waste Hazard Warnings
-Hazardous materials (AA/AAA batteries, phone cables, chargers, earbuds) highlight an unmissable purple alert banner:
-> ⚠️ **SPECIAL E-WASTE HAZARD WARNING**: *DANGER: Do NOT place in regular municipal waste bins! Heavy metals cause fire and groundwater toxicity. Take directly to the Central Library Drop Box.*
-
-### 📍 E. Priority-Matched Campus Finder (`src/components/CampusView.tsx`)
-- Automatically prioritizes collection points matching the scanned item's category.
-- Pins a **"BEST MATCH FOR YOUR WASTE"** badge on top with distance sorting (30m, 120m, 250m) and landmark directions.
-
-### 📊 F. Personalized Eco Dashboard & Gamification (`src/components/DashboardView.tsx`)
-- Personalized opportunity insights (*"You've correctly segregated 4 PET bottles this week!"*).
-- Eco Points (+12 to +30 pts per item) with celebration confetti.
-- Carbon emissions avoided ($\text{g CO}_2\text{e}$ offset) with explicit methodology disclaimer notes.
 
 ---
 
-## 🏗️ 3. Technical Stack & Local Setup
+## 🌟 Core Features & Innovations
 
-### Technology Stack
+### 🤖 1. Gemini Vision AI Multimodal Classification (`/api/analyze-waste`)
+- Server-side integration with **Google Gemini Vision AI** (`gemini-3.6-flash` with fallback cascade).
+- Analyzes camera captures or image uploads to detect exact item identity, material composition, waste stream, confidence score, preparation instructions, and safety hazard warnings.
+- **Zero API Key Leakage**: API key remains strictly server-side in `.env` or Vercel environment variables.
+
+### ♻️ 2. Automated Disposal Decision Trail & Preparation Checklist
+- Explains the exact reasoning behind every AI decision:
+  `ITEM (PET Plastic Bottle) → MATERIAL (PET Plastic) → STREAM (Recyclable) → BIN (Blue Recycling Bin) → CAMPUS LOCATION (Academic Block A)`
+- Displays a tap-to-complete preparation checklist (e.g. *Empty liquids*, *Crush bottle*, *Separate cap*).
+
+### ⚡ 3. Prominent E-Waste Hazard Warnings
+- Detects hazardous electronic waste (batteries, cables, chargers, earphones) and displays a bold safety banner directing students to the **Central Library E-Waste Drop Box** to prevent municipal landfill contamination.
+
+### 📍 4. Campus-Aware Disposal Navigation & Leaflet Map (`CampusView.tsx`)
+- Maps classified waste to actual campus collection hubs:
+  - **Main Canteen Waste Hub** (30m away)
+  - **Library E-Waste Drop Point** (120m away)
+  - **Academic Block A Recycling Station** (250m away)
+  - **Hostel Zone Organic Composter** (400m away)
+  - **Sports Complex Beverage Recycler** (500m away)
+- **Interactive OpenStreetMap / Leaflet Map**: Smoothly highlights target disposal location markers without requiring proprietary API keys.
+
+### 🏆 5. Eco Points Gamification & Sustainability Tiers
+- **Eco Points**: Earns +10 Eco Points per confirmed valid waste disposal.
+- **Sustainability Tiers**:
+  - `🌿 Eco Starter` (0–49 pts)
+  - `🌱 Green Learner` (50–149 pts)
+  - `🏆 Eco Champion` (150–299 pts)
+  - `🌍 Planet Protector` (300+ pts)
+- Displays active recycling streaks and real-world equivalencies (e.g., smartphone charges saved, LED bulb hours powered).
+
+### 📊 6. Waste Stream Analytics & Persistent History
+- **Stream Distribution Analytics**: Calculates exact item counts and percentage breakdowns across Recyclable, Wet, Dry, and E-Waste streams with animated CSS proportion bars.
+- **Persistent Scan History**: Safely stores all past scans in `localStorage` with validation against corrupted data. Includes multi-field search and stream filter controls.
+
+---
+
+## 🏗️ Technical Architecture & Stack
+
 - **Frontend**: React 19, Vite 8, TypeScript 6
-- **Styling**: Tailwind CSS v4, Lucide Icons, Glassmorphism design system
-- **AI / Computer Vision**: TensorFlow.js MobileNet v2 in browser
-- **Persistence**: LocalStorage
+- **Styling**: Tailwind CSS v4, Lucide Icons, Warm Ivory / Forest Green Sustainability palette
+- **AI Engine**: Google Gemini Vision AI (`gemini-3.6-flash`) via serverless backend
+- **Mapping**: Leaflet 1.9 & OpenStreetMap
+- **State & Persistence**: React Hooks + LocalStorage
+- **Deployment**: Vercel-ready Serverless API structure (`/api/analyze-waste.js`)
 
-### Run Locally
+---
+
+## 🛠️ Local Setup & Environment Configuration
+
+### 1. Prerequisites
+- Node.js (v18+ recommended)
+- npm or pnpm
+
+### 2. Installation & Setup
 
 ```bash
-# 1. Install dependencies
+# Clone repository
+git clone https://github.com/singhjay0026/EcoSnap-Waste-Classifier.git
+cd EcoSnap-Waste-Classifier
+
+# Install dependencies
 npm install
+```
 
-# 2. Start dev server
+### 3. Environment Variables
+Create a `.env` file in the project root:
+
+```env
+# Gemini API Key (Server-side execution only)
+GEMINI_API_KEY=your_google_gemini_api_key_here
+PORT=3001
+```
+
+> ⚠️ **Security Note**: Never commit your `.env` file or expose `GEMINI_API_KEY` to client-side code. `.env` is listed in `.gitignore`.
+
+### 4. Running Locally
+
+```bash
+# Start development server
 npm run dev
+```
 
-# 3. Production Build
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### 5. Production Build
+
+```bash
+# Compile TypeScript & build bundle
 npm run build
 ```
 
 ---
 
-## 🏆 4. Live Hackathon Demo Guide (15-Second Judge Flow)
+## 🚀 Vercel Deployment
 
-1. **Scenario 1 — Plastic Water Bottle**:
-   - Click **"🥤 Plastic Bottle"** in the top Judge Demo Console.
-   - Result shows: **Plastic Water Bottle (PET)** $\rightarrow$ **94% Confidence** $\rightarrow$ **Blue Recycling Bin** $\rightarrow$ **Decision Trail** $\rightarrow$ **Main Canteen Waste Hub (30m away)** $\rightarrow$ **+12 Eco Points**.
+EcoSnap is pre-configured for instant Vercel deployment:
 
-2. **Scenario 2 — AA Battery (Hazardous E-Waste)**:
-   - Click **"🔋 AA Battery"** in the Judge Demo Console.
-   - Result shows: ⚠️ **SPECIAL E-WASTE HAZARD WARNING** $\rightarrow$ **Library E-Waste Drop Point (120m away)** $\rightarrow$ **+25 Eco Points**.
-
-3. **Scenario 3 — Low Confidence Safety Test**:
-   - Click **"❓ Low Confidence Item"**.
-   - Result shows: *"I'm not completely sure"* safety view with manual fallback category selector.
+1. Push your repository to GitHub.
+2. Import project into Vercel dashboard.
+3. Add environment variable `GEMINI_API_KEY` in Vercel Settings $\rightarrow$ Environment Variables.
+4. Deploy! The `/api/analyze-waste` endpoint automatically routes to Vercel Serverless Functions.
 
 ---
 
-## 📄 5. Final Quality Gate
+## 📄 Final Verification & Quality Checklist
 
-- [x] Production build passes clean with `npm run build`
+- [x] Production build passes cleanly (`npm run build`)
 - [x] Zero TypeScript errors
-- [x] Browser-side TensorFlow.js MobileNet inference
-- [x] Frame snapping canvas preview & image upload support
-- [x] Safety & confidence thresholds (High, Medium, Low)
-- [x] E-Waste hazard warning banners
-- [x] Automated Decision Trail node visualization
-- [x] Priority-matched campus finder with distance sorting
-- [x] Mobile-first touch responsive layout (320px – 1440px+)
-- [x] LocalStorage persistence & Eco Dashboard
+- [x] Multimodal Gemini Vision AI backend integration
+- [x] Server-side API key protection
+- [x] Campus-aware disposal mapping & Leaflet interactive map
+- [x] Eco Points & Sustainability Tier progression system
+- [x] Animated CO₂ impact & count-up counters
+- [x] Waste Stream Breakdown analytics
+- [x] Persistent scan audit trail with search & filtering
+- [x] Responsive layout (Mobile, Tablet, Desktop)
+- [x] `prefers-reduced-motion` accessibility support
+- [x] PWA manifest & Vercel deployment configuration
 
 ---
 
-*EcoSnap — Built for College Sustainability Hackathon 2026.*
+*EcoSnap — Built for College Sustainability & Eco Hackathons 2026.*
