@@ -118,6 +118,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      {/* Tangible Real-World Environmental Equivalency Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-300 space-y-1">
+          <div className="text-[10px] font-black text-emerald-900 uppercase tracking-wider">SMARTPHONE CHARGES EQUIVALENT</div>
+          <div className="text-xl font-black text-emerald-950">
+            ~{Math.round(userStats.totalImpactCo2eGrams / 8.4)} Full Charges
+          </div>
+          <p className="text-[11px] text-emerald-900/80 font-medium">
+            Based on ~8.4g CO₂e avoided per phone charge cycle.
+          </p>
+        </div>
+
+        <div className="p-4 sm:p-5 rounded-2xl bg-stone-100 border border-stone-300 space-y-1">
+          <div className="text-[10px] font-black text-stone-700 uppercase tracking-wider">LED LIGHTING EQUIVALENT</div>
+          <div className="text-xl font-black text-stone-900">
+            ~{Math.round(userStats.totalImpactCo2eGrams / 3.2)} Hours
+          </div>
+          <p className="text-[11px] text-stone-600 font-medium">
+            Equivalent to powering an 8W campus LED bulb.
+          </p>
+        </div>
+
+        <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-300 space-y-1">
+          <div className="text-[10px] font-black text-amber-900 uppercase tracking-wider">LANDFILL DIVERSION RATE</div>
+          <div className="text-xl font-black text-amber-950">
+            {userStats.totalScans > 0 ? '100% Diverted' : '0 Items Diverted'}
+          </div>
+          <p className="text-[11px] text-amber-900/80 font-medium">
+            Items routed to designated campus drop-off streams.
+          </p>
+        </div>
+      </div>
+
       {/* Category Stream Breakdown Bar */}
       <div className="p-6 rounded-3xl paper-card border border-stone-300 space-y-4 bg-white">
         <div className="flex items-center justify-between">
