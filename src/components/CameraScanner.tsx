@@ -104,26 +104,28 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
     setIsAnalyzing(true);
     try {
       const result = await classifyWaste(imageUri);
-      setTimeout(() => {
-        setIsAnalyzing(false);
-        onClassificationComplete(result);
-      }, 500);
+      stopCamera();
+      onClassificationComplete(result);
     } catch (err) {
       console.error('Classification error:', err);
+    } finally {
       setIsAnalyzing(false);
     }
   };
 
   const handleDemoPresetScan = async (itemKey: string) => {
     setIsAnalyzing(true);
-    const item = WASTE_ITEMS.find((i) => i.id === itemKey);
-    const imageUri = item?.sampleImageUri || 'demo-sample';
-
-    setTimeout(async () => {
+    try {
+      const item = WASTE_ITEMS.find((i) => i.id === itemKey);
+      const imageUri = item?.sampleImageUri || 'demo-sample';
       const result = await classifyWaste(imageUri, itemKey);
-      setIsAnalyzing(false);
+      stopCamera();
       onClassificationComplete(result);
-    }, 500);
+    } catch (err) {
+      console.error('Preset scan error:', err);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

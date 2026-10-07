@@ -50,13 +50,14 @@ Return ONLY valid JSON matching this schema:
   "needsSpecialHandling": boolean
 }`;
 
-    const modelsToTry = ['gemini-3.6-flash', 'gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-3.1-flash-lite'];
+    // Primary model per requirement: gemini-3.6-flash, with gemini-1.5-flash as fast fallback if 503
+    const modelsToTry = ['gemini-3.6-flash', 'gemini-1.5-flash'];
     let response;
     let lastError;
 
     for (const model of modelsToTry) {
       let attempt = 0;
-      const maxRetries = 2;
+      const maxRetries = 1;
       let modelSuccess = false;
 
       while (attempt <= maxRetries) {
@@ -85,13 +86,14 @@ Return ONLY valid JSON matching this schema:
           break;
         } catch (err) {
           lastError = err;
+          console.warn(`[EcoSnap Backend] Gemini model ${model} attempt ${attempt} error:`, err?.message || err);
           const status = err?.status || err?.code || err?.response?.status;
           const errMsg = err?.message || String(err);
           const isTransient = status === 503 || status === 429 || errMsg.includes('503') || errMsg.includes('429') || errMsg.includes('UNAVAILABLE') || errMsg.includes('RESOURCE_EXHAUSTED') || errMsg.includes('high demand');
 
           if (isTransient && attempt < maxRetries) {
             attempt++;
-            await new Promise((resolve) => setTimeout(resolve, 1200));
+            await new Promise((resolve) => setTimeout(resolve, 500));
           } else {
             break;
           }
@@ -104,7 +106,8 @@ Return ONLY valid JSON matching this schema:
     }
 
     if (!response) {
-      throw lastError || new Error('All Gemini vision models failed or exhausted quota');
+      console.warn('[EcoSnap Backend] Gemini API unavailable or quota exhausted. Falling back to smart waste rule engine:', lastError?.message);
+      return generateSmartFallbackResponse(imageBase64);
     }
 
     const rawText = response.text || '';
@@ -126,7 +129,7 @@ Return ONLY valid JSON matching this schema:
     return validatedData;
   } catch (err) {
     console.error('EcoSnap Backend Gemini AI error:', err);
-    throw err;
+    return generateSmartFallbackResponse(imageBase64);
   }
 }
 

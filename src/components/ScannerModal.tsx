@@ -121,14 +121,11 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({
     try {
       const targetUri = overrideUri || capturedImageUri || 'demo-sample';
       const result = await classifyWaste(targetUri);
-
-      setTimeout(() => {
-        setIsAnalyzing(false);
-        stopCamera();
-        onClassificationComplete(result);
-      }, 650);
+      stopCamera();
+      onClassificationComplete(result);
     } catch (err) {
       console.error('Classification error:', err);
+    } finally {
       setIsAnalyzing(false);
     }
   };
@@ -136,15 +133,17 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({
   // Direct demo preset trigger
   const handleDemoPresetScan = async (itemKey: string) => {
     setIsAnalyzing(true);
-    const item = WASTE_ITEMS.find((i) => i.id === itemKey);
-    const imageUri = item?.sampleImageUri || 'demo-sample';
-
-    setTimeout(async () => {
+    try {
+      const item = WASTE_ITEMS.find((i) => i.id === itemKey);
+      const imageUri = item?.sampleImageUri || 'demo-sample';
       const result = await classifyWaste(imageUri, itemKey);
-      setIsAnalyzing(false);
       stopCamera();
       onClassificationComplete(result);
-    }, 600);
+    } catch (err) {
+      console.error('Preset scan error:', err);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   // Handle file upload

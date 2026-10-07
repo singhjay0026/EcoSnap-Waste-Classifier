@@ -22,18 +22,47 @@ export const computeConfidenceLevel = (confidence: number): ConfidenceLevel => {
 /**
  * Resize and compress image element to max 800px JPEG payload before API upload
  */
+/**
+ * Resize and compress image element to max 800px JPEG payload before API upload
+ */
 const compressImageForApi = (elementOrUri: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement | string): Promise<string> => {
   return new Promise((resolve) => {
+    const maxDim = 800;
+
+    const processCanvas = (canvas: HTMLCanvasElement) => {
+      let w = canvas.width;
+      let h = canvas.height;
+      if (w > maxDim || h > maxDim) {
+        const outCanvas = document.createElement('canvas');
+        if (w > h) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        } else {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+        outCanvas.width = w;
+        outCanvas.height = h;
+        const ctx = outCanvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(canvas, 0, 0, w, h);
+          resolve(outCanvas.toDataURL('image/jpeg', 0.75));
+          return;
+        }
+      }
+      resolve(canvas.toDataURL('image/jpeg', 0.75));
+    };
+
     if (typeof elementOrUri === 'string') {
-      if (elementOrUri.startsWith('data:image')) {
+      if (!elementOrUri.startsWith('data:image') && !elementOrUri.startsWith('http') && !elementOrUri.startsWith('blob')) {
         resolve(elementOrUri);
         return;
       }
+
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const maxDim = 800;
         let w = img.width;
         let h = img.height;
         if (w > maxDim || h > maxDim) {
@@ -49,15 +78,19 @@ const compressImageForApi = (elementOrUri: HTMLImageElement | HTMLVideoElement |
         canvas.height = h;
         const ctx = canvas.getContext('2d');
         if (ctx) ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
+        resolve(canvas.toDataURL('image/jpeg', 0.75));
       };
       img.onerror = () => resolve(elementOrUri);
       img.src = elementOrUri;
       return;
     }
 
+    if (elementOrUri instanceof HTMLCanvasElement) {
+      processCanvas(elementOrUri);
+      return;
+    }
+
     const canvas = document.createElement('canvas');
-    const maxDim = 800;
     let w = (elementOrUri as any).videoWidth || (elementOrUri as any).width || 640;
     let h = (elementOrUri as any).videoHeight || (elementOrUri as any).height || 480;
     if (w > maxDim || h > maxDim) {
@@ -73,7 +106,7 @@ const compressImageForApi = (elementOrUri: HTMLImageElement | HTMLVideoElement |
     canvas.height = h;
     const ctx = canvas.getContext('2d');
     if (ctx) ctx.drawImage(elementOrUri as any, 0, 0, w, h);
-    resolve(canvas.toDataURL('image/jpeg', 0.85));
+    resolve(canvas.toDataURL('image/jpeg', 0.75));
   });
 };
 
@@ -139,8 +172,11 @@ export const classifyWaste = async (
   const timestamp = new Date().toISOString();
   const id = `scan-${Date.now()}`;
 
+  console.log('[EcoSnap AI] SCAN START');
+
   // 1. JUDGE DEMO MODE SCENARIO PRESETS
   if (forcedItemKey) {
+    console.log('[EcoSnap AI] Preset scan requested:', forcedItemKey);
     const matchedDemoItem = getWasteItemById(forcedItemKey);
     let demoConfidence = 94;
     let confidenceLevel: ConfidenceLevel = 'high';
@@ -161,6 +197,7 @@ export const classifyWaste = async (
         ]
       : undefined;
 
+    console.log('[EcoSnap AI] SCAN COMPLETE (Preset)');
     return {
       id,
       item: matchedDemoItem,
@@ -175,20 +212,37 @@ export const classifyWaste = async (
   }
 
   // 2. REAL MULTIMODAL AI VISION VIA BACKEND API (/api/analyze-waste)
+  const controller = new AbortController();
+  const timeoutMs = 25000; // 25s hard timeout requirement
+  const timeoutId = setTimeout(() => {
+    console.warn('[EcoSnap AI] Hard timeout triggered after 25s - aborting fetch');
+    controller.abort();
+  }, timeoutMs);
+
   try {
+    console.log('[EcoSnap AI] IMAGE CAPTURED - Compressing payload...');
     const compressedImageBase64 = await compressImageForApi(elementOrUri);
+    console.log(`[EcoSnap AI] IMAGE COMPRESSED - Payload length: ${compressedImageBase64.length} chars`);
+
+    console.log('[EcoSnap AI] API REQUEST START -> /api/analyze-waste');
 
     const apiRes = await fetch('/api/analyze-waste', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageBase64: compressedImageBase64 })
+      body: JSON.stringify({ imageBase64: compressedImageBase64 }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
+
+    console.log(`[EcoSnap AI] API RESPONSE RECEIVED (status: ${apiRes.status})`);
 
     if (apiRes.ok) {
       const data = await apiRes.json();
+      console.log('[EcoSnap AI] JSON PARSED:', data);
 
       if (data.isAiAvailable === false) {
-        // AI Key missing or backend AI service unavailable
+        console.warn('[EcoSnap AI] Backend returned isAiAvailable=false fallback');
         return {
           id,
           item: buildWasteItemFromAiResponse(data),
@@ -214,6 +268,7 @@ export const classifyWaste = async (
           ]
         : undefined;
 
+      console.log('[EcoSnap AI] SCAN COMPLETE (Gemini Vision)');
       return {
         id,
         item: customItem,
@@ -225,24 +280,49 @@ export const classifyWaste = async (
         timestamp,
         scannedImageUri: compressedImageBase64
       };
+    } else {
+      console.error(`[EcoSnap AI] API HTTP Error: ${apiRes.status} ${apiRes.statusText}`);
     }
-  } catch (err) {
-    console.error('Backend /api/analyze-waste network error:', err);
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+      console.error('[EcoSnap AI] SCAN TIMEOUT - Request aborted after 25 seconds');
+      const timedOutItem = getWasteItemById('uncertain-mixed-item');
+      return {
+        id,
+        item: {
+          ...timedOutItem,
+          name: 'AI Analysis Timed Out',
+          whyExplanation: 'AI analysis timed out (exceeded 25 seconds). Please try scanning again.',
+          instructions: ['Ensure good lighting and hold the item clearly in frame', 'Check your internet connection', 'Tap "Scan item now" to retry']
+        },
+        confidence: 0,
+        confidenceLevel: 'low',
+        isDemoMode: false,
+        modelSourceLabel: 'Request Timed Out',
+        timestamp
+      };
+    } else {
+      console.error('[EcoSnap AI] SCAN ERROR:', err);
+    }
+  } finally {
+    clearTimeout(timeoutId);
   }
 
-  // 3. SERVICE UNAVAILABLE FALLBACK
+  // 3. SERVICE UNAVAILABLE / ERROR FALLBACK
+  console.log('[EcoSnap AI] SCAN ERROR FALLBACK RETURNED');
   const unavailableItem = getWasteItemById('uncertain-mixed-item');
   return {
     id,
     item: {
       ...unavailableItem,
-      name: 'Live AI Service Unavailable',
-      whyExplanation: 'Live AI vision service could not be reached. Please check network connection and retry.'
+      name: 'AI Analysis Error',
+      whyExplanation: 'AI vision service could not complete the request. Please try scanning again.'
     },
     confidence: 0,
     confidenceLevel: 'low',
     isDemoMode: false,
-    modelSourceLabel: 'Live AI Service Unavailable',
+    modelSourceLabel: 'Service Error Fallback',
     timestamp
   };
 };
